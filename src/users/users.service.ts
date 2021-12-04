@@ -26,7 +26,9 @@ export class UserService {
     return await this.db.table('users').where({ email }).first();
   }
 
-  async getOne(email: string): Promise<User | undefined> {
-    return await this.db.table('users').where({ email }).first();
+  async getOne(
+    key: { email: string } | { id: number },
+  ): Promise<User | undefined> {
+    return await this.db.table('users').where(key).first();
   }
 }
