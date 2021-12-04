@@ -54,7 +54,7 @@ The endpoint does not make sure that the file is correct and safe before storing
 
 ## Exercise 3 answers
 
-I chose to manually valide the role in the controller, but it is possible to create a guard to do exactly that.
+I chose to manually validate the role in the controller, but it is possible to create a guard to do exactly that.
 
 ## Bonus
 
