@@ -51,3 +51,17 @@ Other existing authentication methods:
 Files are sent over `Content-type: multipart/form-data` requests.
 
 The endpoint does not make sure that the file is correct and safe before storing it, it merely checks the mimetype.
+
+## Exercise 3 answers
+
+I chose to manually valide the role in the controller, but it is possible to create a guard to do exactly that.
+
+## Bonus
+
+To deploy this application, some things have to be extracted as environment vars: application port, JWT secret... If it is relevant, I'd create a GUI in Svelte.
+
+I usually pick Prisma and Postgre, it's more comfortable than anything else.
+
+Playwright is a no brainer when it comes to GUI application testing. However, I've never used it to test APIs.
+
+The DX is good enough for this test, more tools would be overkill. In real projects I usually add [xo](https://github.com/xojs/eslint-config-xo) and [unicorn](https://github.com/sindresorhus/eslint-plugin-unicorn) to eslint. A Node version manager, such as [Volta](https://volta.sh/) is always useful.
