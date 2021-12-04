@@ -34,3 +34,14 @@ We are missing quite a lot in terms of security:
 - There should be basic limitations about what could be used as email and passwords
 - There is no `nonce` or similar non-replay token
 - Passwords should be hashed client side, there is no valid reason for the server to receive the password in cleartext
+
+To authenticate a JWT, the server has to verify that the payload (2nd part) matches the signature (3rd part).
+
+Other existing authentication methods:
+
+- Passwords
+- Server-side sessions
+- Client-side sessions (user here)
+- Certificates
+- Third-party sign in
+- ...
