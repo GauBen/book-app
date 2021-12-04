@@ -32,6 +32,11 @@ export class AppController {
     private authService: AuthService,
   ) {}
 
+  @Get('/')
+  async hello(): Promise<string> {
+    return 'Hello World!';
+  }
+
   @Get('/user/:id')
   async getUser(@Param('id') id: number): Promise<PublicUser> {
     const user = await this.userService.getOne({ id });
