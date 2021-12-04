@@ -9,6 +9,7 @@ import {
   Post,
   Request,
   Res,
+  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -22,7 +23,7 @@ import { copyFile, unlink } from 'fs/promises';
 import slugify from 'slugify';
 import { AuthService } from './auth/auth.service';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
-import { UserService } from './users/users.service';
+import { PublicUser, UserService } from './users/users.service';
 
 @Controller()
 export class AppController {
@@ -32,12 +33,13 @@ export class AppController {
   ) {}
 
   @Get('/user/:id')
-  async getUser(@Param('id') id: number) {
+  async getUser(@Param('id') id: number): Promise<PublicUser> {
     const user = await this.userService.getOne({ id });
     return {
       // Strip out the password
       id: user.id,
       email: user.email,
+      role: user.role,
     };
   }
 
@@ -45,7 +47,7 @@ export class AppController {
   async register(
     @Body('email') email: string,
     @Body('password') password: string,
-  ): Promise<{ id: number; email: string; access_token: string }> {
+  ): Promise<PublicUser & { access_token: string }> {
     // Ignore incomplete requests
     if (!email || !password)
       throw new BadRequestException('Please provide an email and a password');
@@ -57,11 +59,16 @@ export class AppController {
         await hash(password),
       );
 
-      return {
+      const publicUser = {
         id: user.id,
         email: user.email,
+        role: user.role,
+      };
+
+      return {
+        ...publicUser,
         // Add an `access_token` field
-        ...(await this.authService.login(user)),
+        ...(await this.authService.login(publicUser)),
       };
     } catch (error) {
       // `createOne` throws when the user already exist
@@ -101,12 +108,16 @@ export class AppController {
         callback(null, mimetype === 'application/pdf'),
     }),
   )
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  @UseGuards(JwtAuthGuard)
+  async uploadFile(@UploadedFile() file: Express.Multer.File, @Request() req) {
+    if (req.user.role !== 'teacher')
+      throw new UnauthorizedException('Only teachers can upload books');
+
+    // Produce a URL-friendly name
     const basename = file.originalname.slice(
       0,
       file.originalname.lastIndexOf('.'),
     );
-    // Produce a URL-friendly name
     const slug = slugify(basename, { lower: true });
     const dest = `./books/${slug}.pdf`;
 
@@ -118,7 +129,7 @@ export class AppController {
     await copyFile(file.path, dest);
     await unlink(file.path);
 
-    // Give back the uploaded filename
+    // Return the uploaded filename
     return { file: `${slug}.pdf` };
   }
 }

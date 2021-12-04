@@ -1,9 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { Knex, knex } from 'knex';
 
-export interface User {
+interface CommonUserProps {
   id: number;
   email: string;
+  role: 'student' | 'teacher';
+}
+
+/** A sharable object, because it contains no sensible data. */
+export interface PublicUser extends CommonUserProps {
+  password?: never;
+}
+
+/** An internal object that contains sensible data. */
+export interface User extends CommonUserProps {
   password: string;
 }
 
