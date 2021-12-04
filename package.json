@@ -14,7 +14,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "db:reset": "rm db.sql && node seed.js",
+    "db:reset": "rm -f db.sql && node seed.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
