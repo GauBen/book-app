@@ -45,3 +45,9 @@ Other existing authentication methods:
 - Certificates
 - Third-party sign in
 - ...
+
+## Exercise 2 answers
+
+Files are sent over `Content-type: multipart/form-data` requests.
+
+The endpoint does not make sure that the file is correct and safe before storing it, it merely checks the mimetype.

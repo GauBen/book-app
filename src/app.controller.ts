@@ -4,14 +4,24 @@ import {
   Controller,
   Get,
   InternalServerErrorException,
+  NotFoundException,
   Param,
   Post,
   Request,
+  Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { hash } from 'argon2';
+import { Response } from 'express';
+import { createReadStream, existsSync } from 'fs';
+import { copyFile, unlink } from 'fs/promises';
+import slugify from 'slugify';
 import { AuthService } from './auth/auth.service';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { UserService } from './users/users.service';
 
 @Controller()
@@ -50,12 +60,13 @@ export class AppController {
       return {
         id: user.id,
         email: user.email,
-        access_token: '',
+        // Add an `access_token` field
+        ...(await this.authService.login(user)),
       };
     } catch (error) {
       // `createOne` throws when the user already exist
       if ('code' in error && error.code === 'SQLITE_CONSTRAINT')
-        throw new BadRequestException('This user already exist');
+        throw new BadRequestException('This user already exists');
 
       // Unknown error, let's not leak details
       throw new InternalServerErrorException(
@@ -70,5 +81,44 @@ export class AppController {
     access_token: string;
   }> {
     return this.authService.login(req.user);
+  }
+
+  @Get('/book/:file')
+  @UseGuards(JwtAuthGuard)
+  async getBook(@Param('file') file: string, @Res() res: Response) {
+    if (file.includes('/') || !existsSync(`./books/${file}`))
+      throw new NotFoundException('Book not found');
+
+    res.type('application/pdf');
+    createReadStream(`./books/${file}`).pipe(res);
+  }
+
+  @Post('/upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      dest: './tmp/',
+      fileFilter: (_req, { mimetype }, callback) =>
+        callback(null, mimetype === 'application/pdf'),
+    }),
+  )
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    const basename = file.originalname.slice(
+      0,
+      file.originalname.lastIndexOf('.'),
+    );
+    // Produce a URL-friendly name
+    const slug = slugify(basename, { lower: true });
+    const dest = `./books/${slug}.pdf`;
+
+    if (existsSync(dest)) {
+      await unlink(file.path);
+      throw new BadRequestException('This book already exists');
+    }
+
+    await copyFile(file.path, dest);
+    await unlink(file.path);
+
+    // Give back the uploaded filename
+    return { file: `${slug}.pdf` };
   }
 }
